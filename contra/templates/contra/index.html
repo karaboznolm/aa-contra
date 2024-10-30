@@ -1,0 +1,100 @@
+{% extends 'example/base.html' %}
+{% load i18n %}
+{% load humanize %}
+
+{% block details %}
+
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">Contribution Tracker</h3>
+        </div>
+        <div class="panel-body">
+            <form method="GET" action="" style="display: flex; gap: 10px; align-items: flex-end;">
+                <div style="flex: 0 0 auto;">
+                    <label for="wallet">Select Wallet:</label>
+                    <select name="wallet_id" id="wallet" class="form-control input-sm">
+                        <option value="">Select a wallet...</option>
+                        {% for division in walletDivisions %}
+                            <option value="{{ division.division }}" {% if selected_wallet_id == division.division %}selected{% endif %}>
+                                {{ division.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="flex: 0 0 auto;">
+                    <label for="amount">Required Amount:</label>
+                    <input type="text"
+                        name="target_amount"
+                        id="amount"
+                        class="form-control input-sm"
+                        value="{{ target_amount|default:0|floatformat:2|intcomma }}"
+                        pattern="[\d,\.]*"
+                        inputmode="decimal">
+                </div>
+                <div style="flex: 0 0 auto;">
+                    <button type="submit" class="btn btn-primary btn-sm">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="panel panel-secondary">
+        {% if characters %}
+        <div class="panel-body" style="min-height: 100px;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Character Name</th>
+                        <th>Donated Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for char in characters %}
+                        <tr class="{% if char.paid %}bg-success{% else %}bg-danger{% endif %}">
+                            <td>{{ char.character_name }}</td>
+                            <td>{{ char.donated_amount|floatformat:2|intcomma }} ISK</td>
+                            <td>{% if char.paid %}Paid{% else %}Pending{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+    <script>
+        document.getElementById('amount').addEventListener('input', function (e) {
+            let value = this.value.replace(/[^\d.,]/g, '');
+
+            let parts = value.split('.');
+            if (parts.length > 2) {
+                parts = [parts[0], parts.slice(1).join('')];
+            }
+
+            if (value) {
+                let integerPart = parts[0].replace(/,/g, '');
+                let formattedInteger = parseInt(integerPart).toLocaleString('en-US');
+
+                if (parts.length > 1) {
+                    let decimalPart = parts[1].slice(0, 2);
+                    this.value = formattedInteger + '.' + decimalPart;
+                } else {
+                    this.value = formattedInteger;
+                }
+            }
+        });
+
+        document.querySelector('form').addEventListener('submit', function (e) {
+            const amountInput = document.getElementById('amount');
+            amountInput.value = amountInput.value.replace(/,/g, '');
+        });
+    </script>
+
+{% endblock %}
+
+{% block extra_javascript %}
+{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+{% block extra_script %}
+{% endblock %}
