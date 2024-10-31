@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import F
 from django.shortcuts import render
 from django.utils import timezone
+from esi.decorators import token_required
 from esi.errors import TokenError
 from esi.models import Token
 
@@ -160,7 +161,14 @@ def build_player_donation_dictionary(journal, char_dic, corp_id, target_amount=0
 
 @login_required
 @permission_required("contra.basic_access")
-def index(request):
+@token_required(
+    scopes=[
+        "esi-wallet.read_corporation_wallets.v1",
+        "esi-characters.read_corporation_roles.v1",
+        "esi-corporations.read_divisions.v1",
+    ]
+)
+def index(request, token: Token):
     selected_wallet_id = request.GET.get("wallet_id")
     target_amount_str = request.GET.get("target_amount", "0")
 
@@ -169,12 +177,11 @@ def index(request):
     except ValueError:
         target_amount = 0.0
 
-    mainChar = request.user.profile.main_character
-    corp_id = mainChar.corporation_id
+    character = EveCharacter.objects.get(character_id=token.character_id)
+
+    corp_id = character.corporation_id
 
     corpMainCharsDic = get_corp_main_chars_dic(corp_id)
-
-    token = validate_char_token(char_id=mainChar.character_id)
 
     walletDivisions = get_corp_wallet_divisions(corp_id, token)
 
